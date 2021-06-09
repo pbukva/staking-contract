@@ -92,6 +92,7 @@ contract("dutchStaking - selfStaking", async accounts => {
             let currentAIDInit = await instance.currentAID.call()
             expect(currentAIDInit).to.be.bignumber.equal('0')
 
+            console.log("Auction Address", instance.address)
             await token.approve(instance.address, auctionSpec._totalStakingRewards)
             auctionSpec._auctionStart = await web3.eth.getBlockNumber() + 1
             auctionSpec._auctionEnd = auctionSpec._auctionStart + auctionSpec._duration + AuctionConstants._reserve_price_duration

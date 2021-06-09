@@ -7,7 +7,9 @@ const ERC20Token = artifacts.require("CrowdsaleToken");
 // Deploys token, releases it and adds a balance to all accounts
 exports.deployToken = async function(Auction, accounts, initialBalance) {
     let token = await ERC20Token.new(FET_ERC20._name, FET_ERC20._symbol, FET_ERC20._initialSupply, FET_ERC20._decimals, FET_ERC20._mintable);
+    //console.log("Token Address", token.address)
     await token.setReleaseAgent(Auction._owner);
+    //console.log("Auction Owner", Auction._owner)
     await token.releaseTokenTransfer()
 
     for (i=0; i < accounts.length; i++) {
@@ -20,13 +22,13 @@ exports.deployToken = async function(Auction, accounts, initialBalance) {
 exports.initialiseAuction = async function(auctionSpec, token, instance, options={}) {
     let allowance = await token.allowance(auctionSpec._owner, instance.address)
     await token.approve(instance.address, allowance.add(auctionSpec._totalStakingRewards))
+    
 
     if (options.start) {
         auctionSpec._auctionStart = options.start
     } else {
         auctionSpec._auctionStart = await web3.eth.getBlockNumber() + 1
     }
-
     auctionSpec._auctionEnd = auctionSpec._auctionStart + auctionSpec._duration + AuctionConstants._reserve_price_duration
     auctionSpec._lockupEnd = auctionSpec._auctionEnd + auctionSpec._lockup_duration
     await instance.initialiseAuction(auctionSpec._auctionStart, auctionSpec._startStake, auctionSpec._reserveStake, auctionSpec._duration, auctionSpec._lockup_duration, auctionSpec._slotsOnSale, auctionSpec._totalStakingRewards)

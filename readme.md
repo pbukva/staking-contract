@@ -27,10 +27,20 @@ npm install -g truffle@v5.0.36-migrate-describe.1
 npm install -g ganache-cli
 ```
 
-Running tests: in two separate consoles run:
+Running tests:
+
+On truffle testnet
+```
+truffle test
+```
+On ganache
 ```
 ganache-cli
-truffle test
+truffle test --network ganache
+```
+On ropsten (see truffle-config.js for network settings)
+```
+truffle test --network ropsten
 ```
 (Note that the compilation warnings stem from the FET ERC20 contract which was developed under earlier standards.)
 
@@ -44,4 +54,9 @@ Full audit report: [certiK report](https://certificate.certik.org/?key=50a2c433d
 ```
 truffle deploy --network ganache
 truffle deploy --network ropsten
+```
+## Deploy contract on a network with initialization script
+```
+truffle test initialize.js --network ganache
+truffle test initialize.js --network ropsten
 ```
