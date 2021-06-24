@@ -2,7 +2,7 @@ const { BN, time } = require('openzeppelin-test-helpers');
 const { expect } = require('chai');
 
 const { FET_ERC20, AuctionConstants } = require("./constants.js")
-const ERC20Token = artifacts.require("CrowdsaleToken");
+const ERC20Token = artifacts.require("ERC20TestToken");
 
 // Deploys token, releases it and adds a balance to all accounts
 exports.deployToken = async function(Auction, accounts, initialBalance) {

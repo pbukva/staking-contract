@@ -2,7 +2,9 @@
   "dependencies": {
     "@truffle/hdwallet-provider": "^1.4.0",
     "bn.js": "^5.2.0",
-    "chai": "^4.3.4"
+    "chai": "^4.3.4",
+    "solc": "^0.8.4",
+    "truffle": "^5.3.11"
   },
   "devDependencies": {
     "openzeppelin-test-helpers": "^0.5.1"
