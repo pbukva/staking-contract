@@ -436,8 +436,8 @@ def _endLockup(payoutRewards: bool):
         # if self.virtTokenHolders[staker].isHolder:
         #     clear(self.selfStakerDeposits[staker])
 
-    self.stakers) = empty(address)
-    self.auction) = empty(Auction)
+    self.stakers = empty(address[MAX_SLOTS])
+    self.auction = empty(Auction)
 
 @external
 def endLockup():
@@ -667,7 +667,7 @@ def deleteContract():
 @external
 @view
 def getERC20Address() -> address:
-    return self.token
+    return self.token.address
 
 @external
 @view

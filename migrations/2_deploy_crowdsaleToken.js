@@ -8,7 +8,7 @@ async function makeDeployment(deployer, network) {
 	// await deployer.deploy(mthlib);
 	// await deployer.link(mthlib, token);
 	// await deployer.deploy(token, FET_ERC20._name, FET_ERC20._symbol, FET_ERC20._initialSupply, FET_ERC20._decimals, FET_ERC20._mintable);
-    await deployer.deploy(token, name, symbol, initialSupply);
+    await deployer.deploy(token, FET_ERC20._name, FET_ERC20._symbol, FET_ERC20._initialSupply);
 }
 
 module.exports = (deployer, network) => {

@@ -9,7 +9,7 @@ const { deployToken, initialiseAuction, approveAll, addNBids, advanceToBlock, ad
 const { AuctionConstants, FET_ERC20 } = require("../utility/constants.js")
 
 
-contract("dutchStaking - selfStaking", async   => {
+contract("dutchStaking - selfStaking", async accounts => {
     let instance, token
     // ERC20 balance given to every account when deploying the token
     let initialBalance = new BN('100000').mul(FET_ERC20.multiplier)
