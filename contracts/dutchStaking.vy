@@ -30,6 +30,10 @@ DELETE_PERIOD: constant(uint256) = 60 * (3600 * 24)
 # defining the decimals supported in pool rewards per token
 REWARD_PER_TOK_DENOMINATOR: constant(uint256) = 100000
 
+@internal
+def as_unitless_number (x: uint256) -> uint256: 
+    return x
+
 # Structs
 struct Auction:
     finalPrice: uint256
@@ -262,7 +266,7 @@ def initialiseAuction(_start: uint256,
     # add auction rewards
     self.totalAuctionRewards += _reward
     self.auction.rewardPerSlot = self.totalAuctionRewards / self.auction.slotsOnSale
-    success: bool = self.token.transferFrom(msg.sender, self, as_unitless_number(_reward))
+    success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(_reward))
     assert success, "Transfer failed"
 
     log NewAuction(self.currentAID, _start, end, end + _lockup_duration, _startStake,
@@ -275,9 +279,9 @@ def retrieveUndistributedAuctionRewards():
     assert msg.sender == self.owner, "Owner only"
     assert self.auction.lockupEnd == 0, "Auction ongoing"
     undistributed: uint256 = self.totalAuctionRewards
-    clear(self.totalAuctionRewards)
+    self.totalAuctionRewards = empty(uint256)
 
-    success: bool = self.token.transfer(self.owner, as_unitless_number(undistributed))
+    success: bool = self.token.transfer(self.owner, self.as_unitless_number(undistributed))
     assert success, "Transfer failed"
 
 # @notice Enter a bid into the auction. Requires the sender's deposits + _topup >= currentPrice or
@@ -303,13 +307,13 @@ def bid(_topup: uint256):
     # If pool: move unclaimed rewards and clear
     if self.registeredPools[msg.sender].AID == _currentAID:
         unclaimed: uint256 = self.registeredPools[msg.sender].remainingReward
-        clear(self.registeredPools[msg.sender])
+        self.registeredPools[msg.sender] = empty(Pool)
         self.poolDeposits[msg.sender] -= unclaimed
         self.selfStakerDeposits[msg.sender] += unclaimed
     # if address was a pool in a previous auction and not the current one: reset poolDeposits
     # do not rely on self.registeredPools[msg.sender].AID as this gets cleared at certain points
     elif self.poolDeposits[msg.sender] > 0:
-        clear(self.poolDeposits[msg.sender])
+        self.poolDeposits[msg.sender] = empty(uint256)
 
     totDeposit: uint256 = self.poolDeposits[msg.sender] + self.selfStakerDeposits[msg.sender]
     log BidTest(totDeposit)
@@ -332,7 +336,7 @@ def bid(_topup: uint256):
 
     # Transfer topup if necessary
     if (topup > 0):
-        success: bool = self.token.transferFrom(msg.sender, self, as_unitless_number(topup))
+        success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(topup))
         assert success, "Transfer failed"
     log Bid(_currentAID, msg.sender, currentPrice, totDeposit + topup)
 
@@ -383,8 +387,8 @@ def finaliseAuction(finalPrice: uint256):
 
         # later bidders dropping out of slot-allocation as earlier bidders already claim all slots at the final price
         if slots == 0:
-            clear(self.stakerSlots[staker])
-            clear(self.stakers[i])
+            self.stakerSlots[staker] = empty(uint256)
+            self.stakers[i] = empty(address)
 
     if (finalPrice == self.auction.reserveStake) and (self._isBiddingPhase() == False):
         # a) reserveStake clears the auction and reserveStake + 1 does not
@@ -428,12 +432,12 @@ def _endLockup(payoutRewards: bool):
             # else:
             self.selfStakerDeposits[staker] += self.stakerSlots[staker] * rewardPerSlot_
 
-        clear(self.stakerSlots[staker])
+        self.stakerSlots[staker] = empty(uint256)
         # if self.virtTokenHolders[staker].isHolder:
         #     clear(self.selfStakerDeposits[staker])
 
-    clear(self.stakers)
-    clear(self.auction)
+    self.stakers) = empty(address)
+    self.auction) = empty(Auction)
 
 @external
 def endLockup():
@@ -475,7 +479,7 @@ def registerPool(AID: uint256,
     # overwrite any poolDeposits that existed for the last auction
     self.poolDeposits[msg.sender] = _totalReward
 
-    success: bool = self.token.transferFrom(msg.sender, self, as_unitless_number(_totalReward))
+    success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(_totalReward))
     assert success, "Transfer failed"
 
     maxStake: uint256 = (_totalReward * REWARD_PER_TOK_DENOMINATOR) / _rewardPerTok
@@ -490,7 +494,7 @@ def retrieveUnclaimedPoolRewards():
              or (self.registeredPools[msg.sender].AID < self.currentAID)), "Bidding phase of AID not over"
 
     unclaimed: uint256 = self.registeredPools[msg.sender].remainingReward
-    clear(self.registeredPools[msg.sender])
+    self.registeredPools[msg.sender] = empty(Pool)
 
     self.poolDeposits[msg.sender] -= unclaimed
     self.selfStakerDeposits[msg.sender] += unclaimed
@@ -535,10 +539,10 @@ def pledgeStake(AID: uint256, pool: address, amount: uint256):
     self.poolDeposits[pool] += amount
 
     if amount > existingPledgeAmount:
-        success: bool = self.token.transferFrom(msg.sender, self, as_unitless_number(amount - existingPledgeAmount))
+        success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(amount - existingPledgeAmount))
         assert success, "Transfer failed"
     elif amount < existingPledgeAmount:
-        success: bool = self.token.transfer(msg.sender, as_unitless_number(existingPledgeAmount - amount))
+        success: bool = self.token.transfer(msg.sender, self.as_unitless_number(existingPledgeAmount - amount))
         assert success, "Transfer failed"
 
     log NewPledge(AID, msg.sender, pool, amount)
@@ -558,7 +562,7 @@ def increasePledge(pool: address, topup: uint256):
     self.pledges[msg.sender].amount += topup + newReward
     self.poolDeposits[pool] += topup
 
-    success: bool = self.token.transferFrom(msg.sender, self, as_unitless_number(topup))
+    success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(topup))
     assert success, "Transfer failed"
 
     log IncreasedPledge(AID, msg.sender, pool, topup)
@@ -584,7 +588,7 @@ def withdrawSelfStake() -> uint256:
     elif selfStake < selfStakeNeeded:
         assert False, "Critical failure"
 
-    success: bool = self.token.transfer(msg.sender, as_unitless_number(withdrawal))
+    success: bool = self.token.transfer(msg.sender, self.as_unitless_number(withdrawal))
     assert success, "Transfer failed"
 
     log SelfStakeWithdrawal(msg.sender, withdrawal)
@@ -598,9 +602,9 @@ def withdrawPledgedStake() -> uint256:
     if ((self.pledges[msg.sender].AID < self.currentAID)
         or (self.auction.lockupEnd == 0)):
         withdrawal += self.pledges[msg.sender].amount
-        clear(self.pledges[msg.sender])
+        self.pledges[msg.sender] = empty(Pledge)
 
-    success: bool = self.token.transfer(msg.sender, as_unitless_number(withdrawal))
+    success: bool = self.token.transfer(msg.sender, self.as_unitless_number(withdrawal))
     assert success, "Transfer failed"
 
     log PledgeWithdrawal(msg.sender, withdrawal)
@@ -708,3 +712,4 @@ def getCurrentPrice() -> uint256:
 @view
 def calculateSelfStakeNeeded(_address: address) -> uint256:
     return self._calculateSelfStakeNeeded(_address)
+    

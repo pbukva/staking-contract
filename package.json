@@ -6,6 +6,9 @@
     "solc": "^0.8.4",
     "truffle": "^5.3.11"
   },
+  "scripts": {
+		"truffle": "$(npm bin)/truffle"
+	},
   "devDependencies": {
     "openzeppelin-test-helpers": "^0.5.1"
   }
