@@ -6,11 +6,11 @@ const ERC20Token = artifacts.require("ERC20TestToken");
 
 // Deploys token, releases it and adds a balance to all accounts
 exports.deployToken = async function(Auction, accounts, initialBalance) {
-    let token = await ERC20Token.new(FET_ERC20._name, FET_ERC20._symbol, FET_ERC20._initialSupply, FET_ERC20._decimals, FET_ERC20._mintable);
-    //console.log("Token Address", token.address)
-    await token.setReleaseAgent(Auction._owner);
-    //console.log("Auction Owner", Auction._owner)
-    await token.releaseTokenTransfer()
+    let token = await ERC20Token.new(FET_ERC20._name, FET_ERC20._symbol, FET_ERC20._initialSupply);
+    ////console.log("Token Address", token.address)
+    //await token.setReleaseAgent(Auction._owner);
+    ////console.log("Auction Owner", Auction._owner)
+    //await token.releaseTokenTransfer()
 
     for (i=0; i < accounts.length; i++) {
         await token.transfer(accounts[i], initialBalance)

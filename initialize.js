@@ -26,7 +26,7 @@ contract("dutchStaking - selfStaking", async accounts => {
         _owner : accounts[0]  // truffle default
     }
 
-    console.log("Owner Address", accounts[0])
+    //console.log("Owner Address", accounts[0])
 
     // div returns integer division (i.e. floor())
     auctionSpec._rewardPerSlot = auctionSpec._totalStakingRewards.div( new BN(auctionSpec._slotsOnSale.toString()) )
@@ -56,15 +56,15 @@ contract("dutchStaking - selfStaking", async accounts => {
     describe("Initialise an auction", function() {
         before(async () => {
             instance = await dutchStaking.new(token.address);
-            console.log("Token Address", token.address)
+            //console.log("Token Address", token.address)
         });
         it("should initialise the auction, add auction rewards and return isBiddingPhase = true", async () => {
             let currentAIDInit = await instance.currentAID.call()
             expect(currentAIDInit).to.be.bignumber.equal('0')
 
-            console.log("Auction Address", instance.address)
-            console.log("addr", instance.address)
-            console.log("amount", auctionSpec._totalStakingRewards)
+            //console.log("Auction Address", instance.address)
+            //console.log("addr", instance.address)
+            //console.log("amount", auctionSpec._totalStakingRewards)
             await token.approve(instance.address, auctionSpec._totalStakingRewards)
             auctionSpec._auctionStart = await web3.eth.getBlockNumber() + 1
             auctionSpec._auctionEnd = auctionSpec._auctionStart + auctionSpec._duration + AuctionConstants._reserve_price_duration
@@ -93,6 +93,6 @@ contract("dutchStaking - selfStaking", async accounts => {
             await initialiseAuction(auctionSpec, token, instance);
             assert.ok(await instance.isBiddingPhase(), "Bidding phase should be open")
         });
-        console.log("bidder", bidder)
+        //console.log("bidder", bidder)
     });
 });
