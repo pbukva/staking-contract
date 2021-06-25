@@ -58,10 +58,10 @@ struct Pool:
     rewardPerTok: uint256
     AID: uint256
 
-# struct VirtTokenHolder:
-#     isHolder: bool
-#     limit: uint256
-#     rewards: uint256
+struct VirtTokenHolder:
+    isHolder: bool
+    limit: uint256
+    rewards: uint256
 
 # Events
 event Bid:
@@ -139,7 +139,7 @@ auction: public(Auction)
 totalAuctionRewards: public(uint256)
 
 # Virtual token management
-#virtTokenHolders: public(HashMap(address, VirtTokenHolder))
+virtTokenHolders: public(HashMap[address, VirtTokenHolder])
 
 ################################################################################
 # Constant functions
@@ -300,9 +300,9 @@ def bid(_topup: uint256):
 
     _currentAID: uint256 = self.currentAID
     currentPrice: uint256 = self._getCurrentPrice()
-    # _isVirtTokenHolder: bool = self.virtTokenHolders[msg.sender].isHolder
+    _isVirtTokenHolder: bool = self.virtTokenHolders[msg.sender].isHolder
 
-    # assert (_isVirtTokenHolder == False) or (_topup <= self.virtTokenHolders[msg.sender].limit), "Virtual tokens above limit"
+    assert (_isVirtTokenHolder == False) or (_topup <= self.virtTokenHolders[msg.sender].limit), "Virtual tokens above limit"
 
     # If pool: move unclaimed rewards and clear
     if self.registeredPools[msg.sender].AID == _currentAID:
@@ -427,14 +427,14 @@ def _endLockup(payoutRewards: bool):
             break
 
         if payoutRewards:
-            # if self.virtTokenHolders[staker].isHolder:
-            #     self.virtTokenHolders[staker].rewards += self.stakerSlots[staker] * rewardPerSlot_
-            # else:
-            self.selfStakerDeposits[staker] += self.stakerSlots[staker] * rewardPerSlot_
+            if self.virtTokenHolders[staker].isHolder:
+                self.virtTokenHolders[staker].rewards += self.stakerSlots[staker] * rewardPerSlot_
+            else:
+                self.selfStakerDeposits[staker] += self.stakerSlots[staker] * rewardPerSlot_
 
         self.stakerSlots[staker] = empty(uint256)
-        # if self.virtTokenHolders[staker].isHolder:
-        #     clear(self.selfStakerDeposits[staker])
+        if self.virtTokenHolders[staker].isHolder:
+            self.selfStakerDeposits[staker] = empty(uint256)
 
     self.stakers = empty(address[MAX_SLOTS])
     self.auction = empty(Auction)
@@ -575,18 +575,18 @@ def withdrawSelfStake() -> uint256:
     # not guaranteed to be initialised to 0 without setting it explicitly
     withdrawal: uint256 = 0
 
-    # if self.virtTokenHolders[msg.sender].isHolder:
-    #     withdrawal = self.virtTokenHolders[msg.sender].rewards
-    #     clear(self.virtTokenHolders[msg.sender].rewards)
-    # else:
-    selfStake: uint256 = self.selfStakerDeposits[msg.sender]
-    selfStakeNeeded: uint256 = self._calculateSelfStakeNeeded(msg.sender)
+    if self.virtTokenHolders[msg.sender].isHolder:
+        withdrawal = self.virtTokenHolders[msg.sender].rewards
+        self.virtTokenHolders[msg.sender].rewards = empty(uint256)
+    else:
+        selfStake: uint256 = self.selfStakerDeposits[msg.sender]
+        selfStakeNeeded: uint256 = self._calculateSelfStakeNeeded(msg.sender)
 
-    if selfStake > selfStakeNeeded:
-        withdrawal = selfStake - selfStakeNeeded
-        self.selfStakerDeposits[msg.sender] -= withdrawal
-    elif selfStake < selfStakeNeeded:
-        assert False, "Critical failure"
+        if selfStake > selfStakeNeeded:
+            withdrawal = selfStake - selfStakeNeeded
+            self.selfStakerDeposits[msg.sender] -= withdrawal
+        elif selfStake < selfStakeNeeded:
+            assert False, "Critical failure"
 
     success: bool = self.token.transfer(msg.sender, self.as_unitless_number(withdrawal))
     assert success, "Transfer failed"
@@ -634,32 +634,32 @@ def deleteContract():
 # @param preserveRewards: if setting isVirtTokenHolder to false and that address still has remaining rewards:
 #   whether to move those rewards into selfStakerDeposits or to add them back to the control of the owner
 #   by adding them to totalAuctionRewards
-# @external
-# def setVirtTokenHolder(_address: address, _isVirtTokenHolder: bool, limit: uint256, preserveRewards: bool):
-#     assert msg.sender == self.owner, "Owner only"
-#     assert self.stakerSlots[_address] == 0, "Address has active slots"
-#     assert self.selfStakerDeposits[_address] == 0, "Address has positive selfStakerDeposits"
-#     assert self.registeredPools[_address].remainingReward == 0, "Address has remainingReward"
-#     assert self.pledges[_address].amount == 0, "Address has positive pledges"
-#     assert (self.registeredPools[_address].AID < self.currentAID) or (self.auction.finalPrice == 0), "Address has a pool in ongoing auction"
+@external
+def setVirtTokenHolder(_address: address, _isVirtTokenHolder: bool, limit: uint256, preserveRewards: bool):
+    assert msg.sender == self.owner, "Owner only"
+    assert self.stakerSlots[_address] == 0, "Address has active slots"
+    assert self.selfStakerDeposits[_address] == 0, "Address has positive selfStakerDeposits"
+    assert self.registeredPools[_address].remainingReward == 0, "Address has remainingReward"
+    assert self.pledges[_address].amount == 0, "Address has positive pledges"
+    assert (self.registeredPools[_address].AID < self.currentAID) or (self.auction.finalPrice == 0), "Address has a pool in ongoing auction"
 
-#     existingRewards: uint256 = self.virtTokenHolders[_address].rewards
+    existingRewards: uint256 = self.virtTokenHolders[_address].rewards
 
-#     if (_isVirtTokenHolder == False) and (existingRewards > 0):
-#         if preserveRewards:
-#             self.selfStakerDeposits[_address] += existingRewards
-#         else:
-#             self.totalAuctionRewards += existingRewards
-#         clear(self.virtTokenHolders[_address].rewards)
+    if (_isVirtTokenHolder == False) and (existingRewards > 0):
+        if preserveRewards:
+            self.selfStakerDeposits[_address] += existingRewards
+        else:
+            self.totalAuctionRewards += existingRewards
+        self.virtTokenHolders[_address].rewards = empty(uint256)
 
-#     self.virtTokenHolders[_address].isHolder = _isVirtTokenHolder
-#     self.virtTokenHolders[_address].limit = limit
+    self.virtTokenHolders[_address].isHolder = _isVirtTokenHolder
+    self.virtTokenHolders[_address].limit = limit
 
-# @external
-# def setVirtTokenLimit(_address: address, _virtTokenLimit: uint256):
-#     assert msg.sender == self.owner, "Owner only"
-#     assert self.virtTokenHolders[_address].isHolder, "Not a virtTokenHolder"
-#     self.virtTokenHolders[_address].limit = _virtTokenLimit
+@external
+def setVirtTokenLimit(_address: address, _virtTokenLimit: uint256):
+    assert msg.sender == self.owner, "Owner only"
+    assert self.virtTokenHolders[_address].isHolder, "Not a virtTokenHolder"
+    self.virtTokenHolders[_address].limit = _virtTokenLimit
 
 ################################################################################
 # Getters
