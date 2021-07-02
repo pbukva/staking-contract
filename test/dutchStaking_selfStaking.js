@@ -8,6 +8,9 @@ const { deployToken, initialiseAuction, approveAll, addNBids, advanceToBlock, ad
         registerWalletPool, calc_rewardPerTok } = require('../utility/utils');
 const { AuctionConstants, FET_ERC20 } = require("../utility/constants.js")
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 contract("dutchStaking - selfStaking", async accounts => {
     let instance, token
@@ -931,15 +934,32 @@ contract("dutchStaking - selfStaking", async accounts => {
             let currentBlock = await web3.eth.getBlock(currentBlockNumber);
             let earliestDelete = await instance.earliestDelete.call()
 
+            //console.log('current block time = ', (await time.latest()).toString())
+            //console.log('earliest delete = ', earliestDelete.toString());
+            //console.log('current block time = ', (await time.latest()).toString())
+
             assert.equal(earliestDelete.toNumber(), currentBlock.timestamp + AuctionConstants._delete_period)
-            await time.increaseTo(earliestDelete - 1)
+            //await sleep(3000)
+            //console.log('current block time (after sleep 3000 ms)= ', (await time.latest()).toString())
+            
+            new_earliest_delete = earliestDelete.sub(new BN('100')) 
+            //console.log('calculated earlier delete = ', new_earliest_delete.toString())
+
+            await time.increaseTo(new_earliest_delete)
+            //console.log('1 current block time = ', (await time.latest()).toString())
+            //await sleep(10000)
+
             await expectRevert(instance.deleteContract.call({from: auctionSpec._owner}), "earliestDelete not reached")
+            //console.log('2 current block time = ', (await time.latest()).toString())
 
             await time.increaseTo(earliestDelete)
+            //await sleep(10000)
             let balanceOwnerPre = await token.balanceOf(auctionSpec._owner)
             let balanceContract = await token.balanceOf(instance.address)
 
             await instance.deleteContract({from: auctionSpec._owner})
+            //console.log('3 current block time = ', (await time.latest()).toString())
+
             let balanceOwnerPost = await token.balanceOf(auctionSpec._owner)
 
             expect(balanceOwnerPost.sub(balanceOwnerPre)).to.be.bignumber.equal(balanceContract)

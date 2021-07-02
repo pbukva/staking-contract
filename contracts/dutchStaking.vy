@@ -17,9 +17,6 @@
 #------------------------------------------------------------------------------
 from vyper.interfaces import ERC20
 
-# units: {
-#     tok: "smallest ERC20 token unit",
-# }
 
 # maximum possible number of stakers a new auction can specify
 MAX_SLOTS: constant(uint256) = 200
@@ -338,50 +335,6 @@ def bid(_topup: uint256):
         success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(topup))
         assert success, "Transfer failed"
     log Bid(_currentAID, msg.sender, currentPrice, totDeposit + topup)
-
-#    assert self._isBiddingPhase(), "Not in bidding phase"
-#    assert self.stakerSlots[msg.sender] == 0, "Sender already bid"
-#
-#    _currentAID: uint256 = self.currentAID
-#    currentPrice: uint256 = self._getCurrentPrice()
-#    _isVirtTokenHolder: bool = self.virtTokenHolders[msg.sender].isHolder
-#
-#    assert (_isVirtTokenHolder == False) or (_topup <= self.virtTokenHolders[msg.sender].limit), "Virtual tokens above limit"
-#
-#    # If pool: move unclaimed rewards and clear
-#    if self.registeredPools[msg.sender].AID == _currentAID:
-#        unclaimed: uint256 = self.registeredPools[msg.sender].remainingReward
-#        self.registeredPools[msg.sender] = empty(Pool)
-#        self.poolDeposits[msg.sender] -= unclaimed
-#        self.selfStakerDeposits[msg.sender] += unclaimed
-#    # if address was a pool in a previous auction and not the current one: reset poolDeposits
-#    # do not rely on self.registeredPools[msg.sender].AID as this gets cleared at certain points
-#    elif self.poolDeposits[msg.sender] > 0:
-#        self.poolDeposits[msg.sender] = empty(uint256)
-#
-#    totDeposit: uint256 = self.poolDeposits[msg.sender] + self.selfStakerDeposits[msg.sender]
-#
-#    # cannot modify input argument
-#    topup: uint256 = _topup
-#    if (currentPrice > totDeposit) and(_topup == 0):
-#        topup = currentPrice - totDeposit
-#    else:
-#        assert totDeposit + topup >= currentPrice, "Bid below current price"
-#
-#    #Update deposits & stakers
-#    self.priceAtBid[msg.sender] = currentPrice
-#    self.selfStakerDeposits[msg.sender] += topup
-#    slots: uint256 = min((totDeposit + topup) / currentPrice, self.auction.slotsOnSale - self.auction.slotsSold)
-#    self.stakerSlots[msg.sender] = slots
-#    self.auction.slotsSold += slots
-#    self.stakers[self.auction.uniqueStakers] = msg.sender
-#    self.auction.uniqueStakers += 1
-#
-#    # Transfer topup if necessary
-#    if (topup > 0):
-#        success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(topup))
-#        assert success, "Transfer failed"
-#    log Bid(_currentAID, msg.sender, currentPrice, totDeposit + topup)
 
 # @Notice Anyone can supply the correct final price to finalise the auction and calculate the number of slots each
 #   staker has won. Required before lock-up can be ended or withdrawals can be made
